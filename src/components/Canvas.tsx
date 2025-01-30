@@ -8,9 +8,18 @@ interface CanvasProps {
   selectedComponent: string | null;
   onSelectComponent: (id: string | null) => void;
   onDropPositionChange: (position: DropPosition) => void;
+  onDuplicate: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
-function Canvas({ components, selectedComponent, onSelectComponent, onDropPositionChange }: CanvasProps) {
+function Canvas({
+  components,
+  selectedComponent,
+  onSelectComponent,
+  onDropPositionChange,
+  onDuplicate,
+  onDelete,
+}: CanvasProps) {
   const { setNodeRef, isOver, active } = useDroppable({
     id: 'canvas',
   });
@@ -27,6 +36,8 @@ function Canvas({ components, selectedComponent, onSelectComponent, onDropPositi
         selectedComponent={selectedComponent}
         onSelectComponent={onSelectComponent}
         onDropPositionChange={onDropPositionChange}
+        onDuplicate={onDuplicate}
+        onDelete={onDelete}
       />
       {isDraggingNew && components.length === 0 && isOver && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

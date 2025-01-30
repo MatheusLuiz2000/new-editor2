@@ -13,12 +13,13 @@ import {
   CollisionDetection,
   rectIntersection,
 } from '@dnd-kit/core';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { arrayMove, SortableContext } from '@dnd-kit/sortable';
 import Toolbox from './components/Toolbox';
 import Canvas from './components/Canvas';
 import { PageComponent, ComponentType, ComponentProps } from './types';
 import { RenderComponent } from './components/RenderComponent';
+import { useHistory } from './hooks/useHistory';
 
 // Add this type at the top with other imports
 type DropPosition = {
@@ -27,7 +28,25 @@ type DropPosition = {
 } | null;
 
 function App() {
-  const [components, setComponents] = useState<PageComponent[]>([]);
+  const {
+    state: components,
+    setState: setComponents,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useHistory<PageComponent[]>([]);
+
+  console.log("oi", {
+    state: components,
+    setState: setComponents,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    components
+  })
+
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
   const [lastOverId, setLastOverId] = useState<string | null>(null);
@@ -47,6 +66,46 @@ function App() {
   });
 
   const sensors = useSensors(mouseSensor, touchSensor);
+
+  // Add keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        if (e.shiftKey) {
+          // Cmd/Ctrl + Shift + Z = Redo
+          if (canRedo) {
+            e.preventDefault();
+            redo();
+          }
+        } else {
+          // Cmd/Ctrl + Z = Undo
+          if (canUndo) {
+            e.preventDefault();
+            undo();
+          }
+        }
+      } else if ((e.metaKey || e.ctrlKey) && e.key === 'y') {
+        // Cmd/Ctrl + Y = Redo (alternative)
+        if (canRedo) {
+          e.preventDefault();
+          redo();
+        }
+      }
+
+      if (selectedComponent) {
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          e.preventDefault();
+          handleDelete(selectedComponent);
+        } else if ((e.metaKey || e.ctrlKey) && e.key === 'd') {
+          e.preventDefault();
+          handleDuplicate(selectedComponent);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedComponent, canUndo, canRedo, undo, redo]);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id.toString());
@@ -94,7 +153,7 @@ function App() {
         children: [],
       };
 
-      setComponents(prev => {
+      setComponents((prev) => {
         if (overId === 'canvas') {
           return [...prev, newComponent];
         }
@@ -177,6 +236,29 @@ function App() {
     );
   };
 
+  const handleDuplicate = (id: string) => {
+    setComponents((prev) => {
+      const componentToDuplicate = prev.find(c => c.id === id);
+      if (!componentToDuplicate) return prev;
+
+      const duplicatedComponent: PageComponent = {
+        ...componentToDuplicate,
+        id: `component-${Date.now()}`,
+        children: componentToDuplicate.children ? [...componentToDuplicate.children] : [],
+      };
+
+      const index = prev.findIndex(c => c.id === id);
+      const newComponents = [...prev];
+      newComponents.splice(index + 1, 0, duplicatedComponent);
+      return newComponents;
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    setComponents((prev) => prev.filter(c => c.id !== id));
+    setSelectedComponent(null);
+  };
+
   return (
     <DndContext
       sensors={sensors}
@@ -187,14 +269,47 @@ function App() {
     >
       <div className="flex h-screen">
         <Toolbox />
-        <SortableContext items={components.map(c => c.id)}>
-          <Canvas
-            components={components}
-            selectedComponent={selectedComponent}
-            onSelectComponent={setSelectedComponent}
-            onDropPositionChange={setCurrentDropPosition}
-          />
-        </SortableContext>
+        <div className="flex-1 flex flex-col">
+          {/* Add toolbar with undo/redo buttons */}
+          <div className="bg-white border-b px-4 py-2 flex items-center space-x-2">
+            <button
+              onClick={undo}
+              disabled={!canUndo}
+              className={`
+                p-2 rounded hover:bg-gray-100 
+                ${!canUndo ? 'opacity-50 cursor-not-allowed' : ''}
+              `}
+              title="Undo (Ctrl+Z)"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+              </svg>
+            </button>
+            <button
+              onClick={redo}
+              disabled={!canRedo}
+              className={`
+                p-2 rounded hover:bg-gray-100
+                ${!canRedo ? 'opacity-50 cursor-not-allowed' : ''}
+              `}
+              title="Redo (Ctrl+Shift+Z)"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
+              </svg>
+            </button>
+          </div>
+          <SortableContext items={components.map(c => c.id)}>
+            <Canvas
+              components={components}
+              selectedComponent={selectedComponent}
+              onSelectComponent={setSelectedComponent}
+              onDropPositionChange={setCurrentDropPosition}
+              onDuplicate={handleDuplicate}
+              onDelete={handleDelete}
+            />
+          </SortableContext>
+        </div>
         <DragOverlay dropAnimation={null}>
           {getDragOverlay()}
         </DragOverlay>

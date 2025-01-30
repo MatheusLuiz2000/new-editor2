@@ -5,6 +5,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { PageComponent } from '../types';
 import { RenderComponent } from './RenderComponent';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { ComponentActions } from './ComponentActions';
 
 interface DroppableAreaProps {
   components: PageComponent[];
@@ -13,6 +14,8 @@ interface DroppableAreaProps {
   level?: number;
   parentId?: string;
   onDropPositionChange: (position: DropPosition) => void;
+  onDuplicate: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
 export function DroppableArea({
@@ -22,6 +25,8 @@ export function DroppableArea({
   level = 0,
   parentId,
   onDropPositionChange,
+  onDuplicate,
+  onDelete,
 }: DroppableAreaProps) {
   const { setNodeRef, isOver, active } = useDroppable({
     id: parentId || 'canvas',
@@ -66,6 +71,8 @@ export function DroppableArea({
               canNest={canNest}
               isDraggingNew={isDraggingNew}
               onDropPositionChange={onDropPositionChange}
+              onDuplicate={onDuplicate}
+              onDelete={onDelete}
             >
               {component.type === 'container' && canNest && (
                 <DroppableArea
@@ -75,6 +82,8 @@ export function DroppableArea({
                   level={level + 1}
                   parentId={component.id}
                   onDropPositionChange={onDropPositionChange}
+                  onDuplicate={onDuplicate}
+                  onDelete={onDelete}
                 />
               )}
             </SortableComponent>
@@ -104,6 +113,8 @@ interface SortableComponentProps {
   isDraggingNew: boolean;
   children?: React.ReactNode;
   onDropPositionChange: (position: DropPosition) => void;
+  onDuplicate: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
 function SortableComponent({
@@ -115,6 +126,8 @@ function SortableComponent({
   isDraggingNew,
   children,
   onDropPositionChange,
+  onDuplicate,
+  onDelete,
 }: SortableComponentProps) {
   const {
     attributes,
@@ -190,12 +203,19 @@ function SortableComponent({
           rounded-lg
           ${!isContainer && 'p-2'}
           select-none
+          group
         `}
         onClick={(e) => {
           e.stopPropagation();
           onSelect();
         }}
       >
+        {isSelected && (
+          <ComponentActions
+            onDuplicate={() => onDuplicate(component.id)}
+            onDelete={() => onDelete(component.id)}
+          />
+        )}
         {/* Top drop indicator */}
         {isDraggingNew && isDirectlyOver && dropPosition === 'top' && (
           <div className="absolute -top-1 left-0 right-0 h-0.5 bg-blue-500 rounded-full" />
