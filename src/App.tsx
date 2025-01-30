@@ -99,10 +99,27 @@ function App() {
           return [...prev, newComponent];
         }
 
+        // Find the target component
+        const overComponent = prev.find(c => c.id === overId);
+        if (!overComponent) return prev;
+
+        // If it's a container and we're not at a specific drop position, nest inside
+        if (overComponent.type === 'container' && !currentDropPosition) {
+          return prev.map(item => {
+            if (item.id === overId) {
+              return {
+                ...item,
+                children: [...(item.children || []), newComponent],
+              };
+            }
+            return item;
+          });
+        }
+
+        // Otherwise, handle top/bottom insertion
         const overIndex = prev.findIndex(c => c.id === overId);
         if (overIndex === -1) return prev;
 
-        // Use the currentDropPosition to determine where to insert
         const insertIndex = currentDropPosition?.position === 'bottom' 
           ? overIndex + 1 
           : overIndex;

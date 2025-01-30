@@ -135,7 +135,6 @@ function SortableComponent({
 
   const isContainer = component.type === 'container';
   const isDirectlyOver = over?.id === component.id;
-  const showInvalidDropIndicator = isDraggingNew && isDirectlyOver && !isContainer;
 
   // Get mouse position relative to the component to determine top/bottom indicator
   const [dropPosition, setDropPosition] = React.useState<'top' | 'bottom' | null>(null);
@@ -164,6 +163,11 @@ function SortableComponent({
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [handleMouseMove]);
 
+  // Show container highlight when hovering over container without a specific drop position
+  const showContainerHighlight = isDraggingNew && isDirectlyOver && isContainer && !dropPosition;
+  // Show invalid state when trying to nest in a non-container
+  const showInvalidDropIndicator = isDraggingNew && isDirectlyOver && !isContainer;
+
   return (
     <div className="relative mb-2">
       <div
@@ -176,10 +180,11 @@ function SortableComponent({
           ${isContainer ? 'bg-white rounded-lg p-4 border border-gray-200' : ''}
           ${isDragging ? 'opacity-75' : 'opacity-100'}
           ${isSelected ? 'ring-2 ring-blue-500' : ''}
-          ${isDirectlyOver && canNest && isContainer ? 'ring-2 ring-blue-400' : ''}
+          ${showContainerHighlight ? 'ring-2 ring-blue-400' : ''}
+          ${showInvalidDropIndicator ? 'ring-2 ring-red-400' : ''}
           relative
           w-full
-          transition-opacity
+          transition-all
           duration-150
           cursor-move
           rounded-lg
@@ -200,7 +205,7 @@ function SortableComponent({
           component={component}
           isSelected={isSelected}
           canNest={canNest && isContainer}
-          isDirectlyOver={isDirectlyOver && canNest && isContainer}
+          isDirectlyOver={isDirectlyOver}
           showInvalidDropIndicator={showInvalidDropIndicator}
         />
         {children}
