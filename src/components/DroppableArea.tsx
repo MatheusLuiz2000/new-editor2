@@ -2,7 +2,7 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { PageComponent } from '../types';
+import { PageComponent, ComponentProps } from '../types';
 import { RenderComponent } from './RenderComponent';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { ComponentActions } from './ComponentActions';
@@ -16,6 +16,7 @@ interface DroppableAreaProps {
   onDropPositionChange: (position: DropPosition) => void;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
+  onUpdateProps: (id: string, props: Partial<ComponentProps>) => void;
 }
 
 export function DroppableArea({
@@ -27,6 +28,7 @@ export function DroppableArea({
   onDropPositionChange,
   onDuplicate,
   onDelete,
+  onUpdateProps,
 }: DroppableAreaProps) {
   const { setNodeRef, isOver, active } = useDroppable({
     id: parentId || 'canvas',
@@ -73,6 +75,7 @@ export function DroppableArea({
               onDropPositionChange={onDropPositionChange}
               onDuplicate={onDuplicate}
               onDelete={onDelete}
+              onUpdateProps={onUpdateProps}
             >
               {component.type === 'container' && canNest && (
                 <DroppableArea
@@ -84,6 +87,7 @@ export function DroppableArea({
                   onDropPositionChange={onDropPositionChange}
                   onDuplicate={onDuplicate}
                   onDelete={onDelete}
+                  onUpdateProps={onUpdateProps}
                 />
               )}
             </SortableComponent>
@@ -115,6 +119,7 @@ interface SortableComponentProps {
   onDropPositionChange: (position: DropPosition) => void;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
+  onUpdateProps: (id: string, props: Partial<ComponentProps>) => void;
 }
 
 function SortableComponent({
@@ -128,6 +133,7 @@ function SortableComponent({
   onDropPositionChange,
   onDuplicate,
   onDelete,
+  onUpdateProps,
 }: SortableComponentProps) {
   const {
     attributes,
@@ -227,6 +233,7 @@ function SortableComponent({
           canNest={canNest && isContainer}
           isDirectlyOver={isDirectlyOver}
           showInvalidDropIndicator={showInvalidDropIndicator}
+          onUpdateProps={onUpdateProps}
         />
         {children}
 

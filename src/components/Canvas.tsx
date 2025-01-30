@@ -1,6 +1,6 @@
 // components/Canvas.jsx
 import { useDroppable } from '@dnd-kit/core';
-import { PageComponent } from '../types';
+import { PageComponent, DeviceType, ComponentProps } from '../types';
 import { DroppableArea } from './DroppableArea';
 
 interface CanvasProps {
@@ -10,6 +10,8 @@ interface CanvasProps {
   onDropPositionChange: (position: DropPosition) => void;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
+  currentDevice: DeviceType;
+  onUpdateProps: (id: string, props: Partial<ComponentProps>) => void;
 }
 
 function Canvas({
@@ -19,6 +21,8 @@ function Canvas({
   onDropPositionChange,
   onDuplicate,
   onDelete,
+  currentDevice,
+  onUpdateProps,
 }: CanvasProps) {
   const { setNodeRef, isOver, active } = useDroppable({
     id: 'canvas',
@@ -38,6 +42,7 @@ function Canvas({
         onDropPositionChange={onDropPositionChange}
         onDuplicate={onDuplicate}
         onDelete={onDelete}
+        onUpdateProps={onUpdateProps}
       />
       {isDraggingNew && components.length === 0 && isOver && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

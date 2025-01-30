@@ -261,6 +261,23 @@ function App() {
     setSelectedComponent(null);
   };
 
+  const handleUpdateProps = (id: string, newProps: Partial<ComponentProps>) => {
+    setComponents((prev) => 
+      prev.map((component) => {
+        if (component.id === id) {
+          return {
+            ...component,
+            props: {
+              ...component.props,
+              ...newProps,
+            },
+          };
+        }
+        return component;
+      })
+    );
+  };
+
   return (
     <DndContext
       sensors={sensors}
@@ -342,6 +359,7 @@ function App() {
                     onDuplicate={handleDuplicate}
                     onDelete={handleDelete}
                     currentDevice={currentDevice}
+                    onUpdateProps={handleUpdateProps}
                   />
                 </SortableContext>
               </div>
