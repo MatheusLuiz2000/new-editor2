@@ -20,6 +20,7 @@ import Canvas from './components/Canvas';
 import { PageComponent, ComponentType, ComponentProps } from './types';
 import { RenderComponent } from './components/RenderComponent';
 import { useHistory } from './hooks/useHistory';
+import { DevicePreview, DeviceType } from './components/DevicePreview';
 
 // Add this type at the top with other imports
 type DropPosition = {
@@ -51,6 +52,7 @@ function App() {
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
   const [lastOverId, setLastOverId] = useState<string | null>(null);
   const [currentDropPosition, setCurrentDropPosition] = useState<DropPosition>(null);
+  const [currentDevice, setCurrentDevice] = useState<DeviceType>('desktop');
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -271,44 +273,80 @@ function App() {
         <Toolbox />
         <div className="flex-1 flex flex-col">
           {/* Add toolbar with undo/redo buttons */}
-          <div className="bg-white border-b px-4 py-2 flex items-center space-x-2">
-            <button
-              onClick={undo}
-              disabled={!canUndo}
-              className={`
-                p-2 rounded hover:bg-gray-100 
-                ${!canUndo ? 'opacity-50 cursor-not-allowed' : ''}
-              `}
-              title="Undo (Ctrl+Z)"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-              </svg>
-            </button>
-            <button
-              onClick={redo}
-              disabled={!canRedo}
-              className={`
-                p-2 rounded hover:bg-gray-100
-                ${!canRedo ? 'opacity-50 cursor-not-allowed' : ''}
-              `}
-              title="Redo (Ctrl+Shift+Z)"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
-              </svg>
-            </button>
-          </div>
-          <SortableContext items={components.map(c => c.id)}>
-            <Canvas
-              components={components}
-              selectedComponent={selectedComponent}
-              onSelectComponent={setSelectedComponent}
-              onDropPositionChange={setCurrentDropPosition}
-              onDuplicate={handleDuplicate}
-              onDelete={handleDelete}
+          <div className="bg-white border-b px-4 py-2 flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={undo}
+                disabled={!canUndo}
+                className={`
+                  p-2 rounded hover:bg-gray-100 
+                  ${!canUndo ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
+                title="Undo (Ctrl+Z)"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                </svg>
+              </button>
+              <button
+                onClick={redo}
+                disabled={!canRedo}
+                className={`
+                  p-2 rounded hover:bg-gray-100
+                  ${!canRedo ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
+                title="Redo (Ctrl+Shift+Z)"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
+                </svg>
+              </button>
+            </div>
+            <DevicePreview
+              currentDevice={currentDevice}
+              onDeviceChange={setCurrentDevice}
             />
-          </SortableContext>
+          </div>
+          
+          {/* Canvas container with improved transitions */}
+          <div className="flex-1 bg-gray-100 overflow-hidden">
+            <div className={`
+              h-full w-full
+              flex items-start justify-center
+              transition-all duration-300 ease-in-out
+              ${currentDevice === 'desktop' ? 'p-0' : 'p-4'}
+            `}>
+              <div 
+                className={`
+                  bg-white
+                  shadow-lg
+                  overflow-auto
+                  h-full
+                  origin-top
+                  transition-[width,margin] duration-300 ease-in-out
+                  ${currentDevice === 'desktop' ? 'w-full m-0' : ''}
+                  ${currentDevice === 'tablet' ? 'w-[768px]' : ''}
+                  ${currentDevice === 'mobile' ? 'w-[375px]' : ''}
+                `}
+                style={{
+                  maxWidth: '100%',
+                  minHeight: currentDevice === 'desktop' ? '100%' : 'auto'
+                }}
+              >
+                <SortableContext items={components.map(c => c.id)}>
+                  <Canvas
+                    components={components}
+                    selectedComponent={selectedComponent}
+                    onSelectComponent={setSelectedComponent}
+                    onDropPositionChange={setCurrentDropPosition}
+                    onDuplicate={handleDuplicate}
+                    onDelete={handleDelete}
+                    currentDevice={currentDevice}
+                  />
+                </SortableContext>
+              </div>
+            </div>
+          </div>
         </div>
         <DragOverlay dropAnimation={null}>
           {getDragOverlay()}

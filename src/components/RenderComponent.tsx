@@ -1,5 +1,5 @@
 import React from 'react';
-import { PageComponent } from '../types';
+import { PageComponent, DeviceType, ResponsiveValue } from '../types';
 
 interface RenderComponentProps {
   component: PageComponent;
@@ -8,13 +8,38 @@ interface RenderComponentProps {
   isDirectlyOver?: boolean;
   showInvalidDropIndicator?: boolean;
   isDragging?: boolean;
+  currentDevice: DeviceType;
 }
 
 export function RenderComponent({ 
   component, 
   isSelected, 
-  showInvalidDropIndicator 
+  showInvalidDropIndicator,
+  currentDevice,
+  ...props
 }: RenderComponentProps) {
+  const getResponsiveValue = <T,>(values: ResponsiveValue<T>): T => {
+    if (currentDevice === 'mobile' && values.mobile !== undefined) {
+      return values.mobile;
+    }
+    if (currentDevice === 'tablet' && values.tablet !== undefined) {
+      return values.tablet;
+    }
+    return values.desktop;
+  };
+
+  const getResponsiveStyles = () => {
+    if (!component.style) return {};
+    
+    const styles: Record<string, string> = {};
+    Object.entries(component.style).forEach(([property, value]) => {
+      if (value) {
+        styles[property] = getResponsiveValue(value);
+      }
+    });
+    return styles;
+  };
+
   switch (component.type) {
     case 'container':
       return null; // Container is just a wrapper now, no title or text needed
